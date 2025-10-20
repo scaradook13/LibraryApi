@@ -1,7 +1,7 @@
 const Borrower = require("../models/Borrower.Model");
 const Book = require("../models/Book.Model");
-const History = require("../models/History.Model");
 const Category = require("../models/Category.Model");
+const Transaction = require("../models/Transaction.Model");
 
 class libraryServices {
   async addBook(payload) {
@@ -17,24 +17,59 @@ class libraryServices {
   }
 
   async addBorrower(payload) {
-    const newBorrower = new Borrower({
-      borrowerName: payload.borrowerName,
-      category: payload.category,
-      date: payload.date,
-      dueDate: payload.dueDate,
-      bookBorrowed: payload.bookBorrowed,
-      contact: payload.contact,
-    });
-    await newBorrower.save();
 
-    const book = await Book.findOne({ bookTitle: payload.bookBorrowed });
-    if (book) {
-      book.quantity = String(Number(book.quantity) - 1);
-      await book.save();
-    }
+  const newBorrower = new Borrower({
+    borrowerName: payload.borrowerName,
+    category: payload.category,
+    date: payload.date,
+    dueDate: payload.dueDate,
+    bookBorrowed: payload.bookBorrowed,
+    contact: payload.contact,
+  });
+  await newBorrower.save();
 
-    return newBorrower;
+
+  const book = await Book.findOne({ bookTitle: payload.bookBorrowed });
+  if (book) {
+    book.quantity = String(Number(book.quantity) - 1);
+    await book.save();
   }
+
+  let status = "Pending";
+  try {
+    if (payload.dueDate) {
+      const today = new Date();
+      const due = new Date(payload.dueDate);
+
+      if (today > due) {
+        status = "Overdue";
+      } else {
+        status = "Borrowed";
+      }
+    }
+  } catch (err) {
+    console.warn("⚠️ Error determining transaction status:", err.message);
+  }
+
+  const newTransaction = new Transaction({
+    borrowerId: newBorrower._id,
+    borrowerName: payload.borrowerName,
+    category: payload.category,
+    bookTitle: payload.bookBorrowed,
+    dateBorrowed: payload.date,
+    dueDate: payload.dueDate,
+    contact: payload.contact,
+    status,
+  });
+  await newTransaction.save();
+
+  return {
+    message: `Borrower "${newBorrower.borrowerName}" added successfully and transaction recorded.`,
+    borrower: newBorrower,
+    transaction: newTransaction,
+  };
+}
+
 
   async removeBook(payload) {
 
@@ -231,18 +266,14 @@ async updateBorrower(payload) {
     throw new Error("Borrower not found");
   }
 
-
   const oldBookTitle = existingBorrower.bookBorrowed;
   const newBookTitle = payload.bookBorrowed;
 
-
   if (oldBookTitle !== newBookTitle) {
-
     await Book.findOneAndUpdate(
       { bookTitle: oldBookTitle },
       { $inc: { quantity: 1 } }
     );
-
 
     await Book.findOneAndUpdate(
       { bookTitle: newBookTitle },
@@ -266,7 +297,70 @@ async updateBorrower(payload) {
     }
   );
 
-  return updatedBorrower;
+  const now = new Date();
+  const dueDate = new Date(updatedBorrower.dueDate);
+  const status = now > dueDate ? "Overdue" : "Borrowed";
+
+  await Transaction.findOneAndUpdate(
+    { borrowerId: updatedBorrower._id },
+    {
+      borrowerName: updatedBorrower.borrowerName,
+      bookTitle: updatedBorrower.bookBorrowed,
+      dateBorrowed: updatedBorrower.date,
+      dueDate: updatedBorrower.dueDate,
+      category: updatedBorrower.category,
+      contact: updatedBorrower.contact,
+      status,
+    },
+  );
+
+  return {
+    message: `Borrower "${updatedBorrower.borrowerName}" updated successfully.`,
+    borrower: updatedBorrower,
+    transactionStatus: status,
+  };
+}
+
+
+async getAllTransaction() {
+    const transaction = await Transaction.find();
+    return await transaction;
+  }
+
+async returnBorrower(payload) {
+
+  const borrower = await Borrower.findById(payload._id);
+  if (!borrower) {
+    throw new Error("Borrower not found");
+  }
+
+  const book = await Book.findOne({ bookTitle: borrower.bookBorrowed });
+  if (!book) {
+    throw new Error("Book not found in the collection");
+  }
+
+  const currentQty = Number(book.quantity);
+  book.quantity = String(currentQty + 1);
+  await book.save();
+
+  const transaction = await Transaction.findOne({ borrowerId: borrower._id });
+  if (transaction) {
+    transaction.status = "Returned";
+    transaction.dateReturned = new Date();
+    await transaction.save();
+  }
+
+  borrower.bookBorrowed = "—";
+  borrower.date = "—";
+  borrower.dueDate = "—";
+  await borrower.save();
+
+  return {
+    message: `Borrower "${borrower.borrowerName}" has returned the book "${borrower.bookBorrowed}".`,
+    borrower,
+    updatedBook: book,
+    transaction,
+  };
 }
 
 

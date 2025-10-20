@@ -1,41 +1,52 @@
 const mongoose = require("mongoose");
 
-const transactionSchema = new mongoose.Schema({
-  book: {
-    type: String,
-    required: true,
-  },
-  borrower: {
-    type: String,
-    required: true,
-  },
-  date: {
-    type: String,
-    required: true,
-  },
-  status: {
-    type: String,
-    required: true,
-  },
-  createdAt: {
-    type: String,
-    default: getDateValue(),
-  },
-  updatedAt: {
-    type: String,
-    default: getDateValue(),
-  },
-});
-
 function getDateValue() {
   const date = new Date();
   const day = date.getDate();
   const month = date.toLocaleString("default", { month: "long" });
   const year = date.getFullYear();
-  let finaldate;
-
-  return (finaldate = `${month} ${day}, ${year}`);
+  return `${month} ${day}, ${year}`;
 }
 
-const Borrower = mongoose.model("Borrower", transactionSchema);
-module.exports = Borrower;
+const transactionSchema = new mongoose.Schema({
+  borrowerId: {
+    type: String,
+    required: true,
+  },
+  borrowerName: {
+    type: String,
+    required: true,
+  },
+  bookTitle: {
+    type: String,
+    required: true,
+  },
+  dateBorrowed: {
+    type: String,
+    required: true,
+  },
+  dueDate: {
+    type: String,
+    required: true,
+  },
+  dateReturned: {
+    type: String,
+    default: null,
+  },
+  status: {
+    type: String,
+    enum: ["Borrowed", "Returned", "Overdue"],
+    default: "Borrowed",
+  },
+  createdAt: {
+    type: String,
+    default: getDateValue,
+  },
+  updatedAt: {
+    type: String,
+    default: getDateValue,
+  },
+});
+
+const Transaction = mongoose.model("Transaction", transactionSchema);
+module.exports = Transaction;

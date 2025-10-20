@@ -57,4 +57,12 @@ router.post(
 router.patch(
   "/updateBorrower",libraryController.updateBorrower
 )
+
+router.get(
+  "/getAllTransaction",libraryController.getAllTransaction
+)
+
+router.patch(
+  "/returnBorrower",libraryController.returnBorrower
+)
 module.exports = router;
