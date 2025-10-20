@@ -34,7 +34,27 @@ router.patch(
   "/updateBook",libraryController.updateBook
 )
 
-router.delete(
+router.post(
   "/deleteBook",libraryController.deleteBook
+)
+
+router.post(
+  "/deleteCategory",libraryController.deleteCategory
+)
+
+router.patch(
+  "/updateCategory",libraryController.updateCategory
+)
+
+router.get(
+  "/getAllBorrower",libraryController.getAllBorrower
+)
+
+router.post(
+  "/deleteBorrower",libraryController.deleteBorrower
+)
+
+router.patch(
+  "/updateBorrower",libraryController.updateBorrower
 )
 module.exports = router;

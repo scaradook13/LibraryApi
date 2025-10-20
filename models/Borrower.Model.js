@@ -5,6 +5,10 @@ const borrowerSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  category: {
+    type: String,
+    required: true,
+  },
   date: {
     type: String,
     required: true,

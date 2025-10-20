@@ -47,6 +47,31 @@ class libraryController {
     const response = await libraryServices.deleteBook(req.body);
     res.status(200).json(response);
   });
+
+  deleteCategory = asyncTryCatch(async (req, res) => {
+    const response = await libraryServices.deleteCategory(req.body);
+    res.status(200).json(response);
+  });
+
+  updateCategory = asyncTryCatch(async (req, res) => {
+    const response = await libraryServices.updateCategory(req.body);
+    res.status(200).json(response);
+  });
+
+  getAllBorrower = asyncTryCatch(async (req, res) => {
+    const response = await libraryServices.getAllBorrower();
+    res.status(200).json(response);
+  });
+
+  deleteBorrower = asyncTryCatch(async (req, res) => {
+    const response = await libraryServices.deleteBorrower(req.body);
+    res.status(200).json(response);
+  });
+
+  updateBorrower = asyncTryCatch(async (req, res) => {
+    const response = await libraryServices.updateBorrower(req.body);
+    res.status(200).json(response);
+  });
   
 }
 

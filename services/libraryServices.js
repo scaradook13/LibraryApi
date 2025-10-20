@@ -19,6 +19,7 @@ class libraryServices {
   async addBorrower(payload) {
     const newBorrower = new Borrower({
       borrowerName: payload.borrowerName,
+      category: payload.category,
       date: payload.date,
       dueDate: payload.dueDate,
       bookBorrowed: payload.bookBorrowed,
@@ -133,7 +134,7 @@ async addCategory(payload) {
 
   async updateBook(payload) {
   const updatedBook = await Book.findOneAndUpdate(
-    { _id: payload.id },
+    { _id: payload._id },
     {
       bookTitle: payload.bookTitle,
       author: payload.author,
@@ -155,7 +156,7 @@ async addCategory(payload) {
 }
 
 async deleteBook(payload) {
-  const deletedBook = await Book.findOneAndDelete({ _id: payload.id });
+  const deletedBook = await Book.findByIdAndDelete(payload._id);
 
   if (!deletedBook) {
     throw new Error("Book not found");
@@ -166,6 +167,108 @@ async deleteBook(payload) {
     deletedBook,
   };
 }
+
+async deleteCategory(payload) {
+  const deletedCategory = await Category.findByIdAndDelete(payload._id);
+
+  if (!deletedCategory) {
+    throw new Error("Category not found");
+  }
+
+  return {
+    message: `Category "${deletedCategory.category}" has been deleted successfully.`,
+    deletedCategory,
+  };
+}
+
+async updateCategory(payload) {
+  console.log("Payload received for updateCategory:", payload);
+  const updateCategory = await Category.findOneAndUpdate(
+    { _id: payload._id },
+    {
+      category: payload.category,
+    },
+    {
+      new: true,           
+      runValidators: true, 
+    }
+  );
+
+  if (!updateCategory) {
+    throw new Error("Category not found");
+  }
+
+  return updateCategory;
+}
+
+async getAllBorrower() {
+    const borrower = await Borrower.find();
+    return await borrower;
+  }
+
+async deleteBorrower(payload) {
+  const deletedBorrower = await Borrower.findByIdAndDelete(payload._id);
+
+  if (!deletedBorrower) {
+    throw new Error("Borrower not found");
+  }
+
+  const book = await Book.findOne({ bookTitle: payload.bookBorrowed });
+    if (book) {
+      book.quantity = String(Number(book.quantity) + 1);
+      await book.save();
+    }
+  return {
+    message: `Borrower "${deletedBorrower.borrowerName}" has been deleted successfully.`,
+    deletedBorrower,
+  };
+}
+
+async updateBorrower(payload) {
+
+  const existingBorrower = await Borrower.findById(payload._id);
+  if (!existingBorrower) {
+    throw new Error("Borrower not found");
+  }
+
+
+  const oldBookTitle = existingBorrower.bookBorrowed;
+  const newBookTitle = payload.bookBorrowed;
+
+
+  if (oldBookTitle !== newBookTitle) {
+
+    await Book.findOneAndUpdate(
+      { bookTitle: oldBookTitle },
+      { $inc: { quantity: 1 } }
+    );
+
+
+    await Book.findOneAndUpdate(
+      { bookTitle: newBookTitle },
+      { $inc: { quantity: -1 } }
+    );
+  }
+
+  const updatedBorrower = await Borrower.findOneAndUpdate(
+    { _id: payload._id },
+    {
+      borrowerName: payload.borrowerName,
+      category: payload.category,
+      date: payload.date,
+      dueDate: payload.dueDate,
+      bookBorrowed: payload.bookBorrowed,
+      contact: payload.contact,
+    },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  return updatedBorrower;
+}
+
 
 }
 module.exports = new libraryServices();
