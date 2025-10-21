@@ -37,16 +37,16 @@ class libraryServices {
 
   let status = "Pending";
   try {
-    if (payload.dueDate) {
+        if (payload.dueDate) {
       const today = new Date();
       const due = new Date(payload.dueDate);
 
-      if (today > due) {
-        status = "Overdue";
-      } else {
-        status = "Borrowed";
-      }
+      today.setHours(0, 0, 0, 0);
+      due.setHours(0, 0, 0, 0);
+
+      status = today > due ? "Overdue" : "Borrowed";
     }
+
   } catch (err) {
     console.warn("⚠️ Error determining transaction status:", err.message);
   }
@@ -120,16 +120,6 @@ class libraryServices {
     book.quantity = String(currentQty + 1);
     await book.save();
 
-    await History.create({
-    borrowerName: borrower.borrowerName,
-    bookTitle: borrower.bookBorrowed,
-    author: payload.author || "Unknown Author",
-    subject: payload.subject || "Unknown Subject",
-    year: payload.year || "Unknown Year",
-    quantity: payload.quantity,
-    borrowedDate: borrower.date,
-    returnDate: payload.returnDate,
-    });
   } else {
     // If book doesn't exist (maybe deleted), recreate it with quantity = 1
     await Book.create({
@@ -248,11 +238,11 @@ async deleteBorrower(payload) {
     throw new Error("Borrower not found");
   }
 
-  const book = await Book.findOne({ bookTitle: payload.bookBorrowed });
-    if (book) {
-      book.quantity = String(Number(book.quantity) + 1);
-      await book.save();
-    }
+  // const book = await Book.findOne({ bookTitle: payload.bookBorrowed });
+  //   if (book) {
+  //     book.quantity = String(Number(book.quantity) + 1);
+  //     await book.save();
+  //   }
   return {
     message: `Borrower "${deletedBorrower.borrowerName}" has been deleted successfully.`,
     deletedBorrower,
@@ -297,9 +287,14 @@ async updateBorrower(payload) {
     }
   );
 
-  const now = new Date();
-  const dueDate = new Date(updatedBorrower.dueDate);
-  const status = now > dueDate ? "Overdue" : "Borrowed";
+    const now = new Date();
+    const dueDate = new Date(updatedBorrower.dueDate);
+
+    now.setHours(0, 0, 0, 0);
+    dueDate.setHours(0, 0, 0, 0);
+
+    const status = now > dueDate ? "Overdue" : "Borrowed";
+
 
   await Transaction.findOneAndUpdate(
     { borrowerId: updatedBorrower._id },

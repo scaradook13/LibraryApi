@@ -47,6 +47,6 @@ const transactionSchema = new mongoose.Schema({
     default: getDateValue,
   },
 });
-
+transactionSchema.index({ createdAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 30 });
 const Transaction = mongoose.model("Transaction", transactionSchema);
 module.exports = Transaction;
