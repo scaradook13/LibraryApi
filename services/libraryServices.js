@@ -306,6 +306,7 @@ async updateBorrower(payload) {
       category: updatedBorrower.category,
       contact: updatedBorrower.contact,
       status,
+      dateReturned: null,
     },
   );
 
